@@ -8,7 +8,9 @@ Original file is located at
 
 
 
+# bot.py
 
+import os
 import asyncio
 from telegram import Bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -17,37 +19,41 @@ from threading import Thread
 from flask import Flask
 
 # Sozlamalar
-BOT_TOKEN = "7634842711:AAFa8U3t0x3YYulaty4grX560JyAsBi7re4"
-CHANNEL_ID = "@servicyozyovon"  # O'zgartiring
+BOT_TOKEN = "7634842711:AAFa8U3t0x3YYulaty4grX560JyAsBi7re4"  # o'zingizning tokeningiz
+CHANNEL_ID = "@servicyozyovon"  # kanal usernameni kiriting
 TIMEZONE = pytz.timezone('Asia/Tashkent')
 
-# Flask server - yangi portda (5000)
+# Flask server
 app = Flask(__name__)
+
 @app.route('/')
-def home(): return "Bot ishlayapti (5000-port)"
+def home():
+    return "Bot ishlayapti (Render Flask)"
 
-def run_flask():
-    app.run(host='0.0.0.0', port=5000)
+def run():
+    port = int(os.environ.get("PORT", 5000))  # Render PORT
+    app.run(host='0.0.0.0', port=port)
 
-Thread(target=run_flask).start()
+# Flask serverni alohida oqimda ishga tushuramiz
+Thread(target=run).start()
 
-# Bot funktsiyalari
+# Xabar yuboruvchi funksiya
 async def send_ad():
     try:
         bot = Bot(token=BOT_TOKEN)
-        message = "🚖 Ishtirxon Taxsi - Toshkent-Samarqand-Farg'ona\n⏰ 8:00 dan\n📞 +998901234567"
+        message = "🚖 Ishtirxon Taxi - Toshkent-Samarqand-Farg'ona\n⏰ 8:00 dan\n📞 +998901234567"
         await bot.send_message(chat_id=CHANNEL_ID, text=message, parse_mode="HTML")
         print(f"✅ Xabar yuborildi: {message[:30]}...")
     except Exception as e:
         print(f"❌ Xato: {e}")
 
-# Scheduler
+# Scheduler sozlash
 scheduler = AsyncIOScheduler(timezone=TIMEZONE)
 scheduler.add_job(send_ad, 'interval', minutes=1)
-scheduler.start()
 
-# Asosiy tsikl
+# Asosiy asyncio tsikli
 async def main():
+    scheduler.start()  # to‘g‘ri joyi shu
     print("🤖 Bot ishga tushdi! Xabarlar har 1 daqiqada yuboriladi...")
     while True:
         await asyncio.sleep(1)
@@ -60,16 +66,7 @@ try:
     else:
         loop.run_until_complete(main())
 except KeyboardInterrupt:
-    print("Bot to'xtatildi")
+    print("⛔️ Bot to'xtatildi")
     scheduler.shutdown()
-
-# Flask asosida ishlash uchun
-from flask import Flask
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "Bot ishlayapti"
-
 
 
